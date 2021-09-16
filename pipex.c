@@ -6,7 +6,7 @@
 /*   By: adubeau <marvin@42quebec.com>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/30 16:53:26 by adubeau           #+#    #+#             */
-/*   Updated: 2021/09/04 14:56:23 by adubeau          ###   ########.fr       */
+/*   Updated: 2021/09/10 15:58:29 by adubeau          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,9 +179,15 @@ int main(int argc, char **argv, char **envp)
 	char *cmd;
 	int i;
 	
-	i = -1;
 	path = ft_split((const char *)getenv("PATH"), ':');
 	command = ft_split(argv[1], ' ');
+	i = 0;
+	while (i < argc)
+	{
+		command[i] = argv[i + 1];
+		i++;
+	}
+	i = -1;
 	while (path[++i])
 	{
 		cmd = ft_strjoin(ft_strjoin(path[i], "/"), command[0]);
