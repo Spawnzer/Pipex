@@ -6,7 +6,7 @@
 /*   By: adubeau <marvin@42quebec.com>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/30 16:53:26 by adubeau           #+#    #+#             */
-/*   Updated: 2021/09/10 15:58:29 by adubeau          ###   ########.fr       */
+/*   Updated: 2021/09/23 12:04:47 by adubeau          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,6 +170,21 @@ void	ft_putstr(char *str)
 	i = 0;
 	while (str[i])
 		ft_putchar(str[i++]);
+	write(1,"\n", 1);
+}
+
+char	*ft_getPath(char **envp)
+{
+	int i;
+	int j;
+
+	while (envp++)
+	{
+		if (envp[i][0] == 'P')
+			if (envp[i][1] == 'A')
+				return (*envp);
+	}
+	return (*envp);
 }
 
 int main(int argc, char **argv, char **envp)
@@ -179,7 +194,7 @@ int main(int argc, char **argv, char **envp)
 	char *cmd;
 	int i;
 	
-	path = ft_split((const char *)getenv("PATH"), ':');
+	path = ft_split(ft_getPath(envp), ':');
 	command = ft_split(argv[1], ' ');
 	i = 0;
 	while (i < argc)
