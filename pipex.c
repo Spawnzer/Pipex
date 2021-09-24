@@ -6,7 +6,7 @@
 /*   By: adubeau <marvin@42quebec.com>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/30 16:53:26 by adubeau           #+#    #+#             */
-/*   Updated: 2021/09/23 12:04:47 by adubeau          ###   ########.fr       */
+/*   Updated: 2021/09/23 15:48:34 by adubeau          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -176,7 +176,6 @@ void	ft_putstr(char *str)
 char	*ft_getPath(char **envp)
 {
 	int i;
-	int j;
 
 	while (envp++)
 	{
