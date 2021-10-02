@@ -6,7 +6,7 @@
 /*   By: adubeau <marvin@42quebec.com>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/30 16:53:26 by adubeau           #+#    #+#             */
-/*   Updated: 2021/10/01 22:11:52 by adubeau          ###   ########.fr       */
+/*   Updated: 2021/10/02 03:00:11 by adubeau          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -211,6 +211,8 @@ void	ft_exec(char **argv, char **envp,  int n)
 		execve(cmd, (char *const *) command, envp);
 		free(cmd);
 	}
+	ft_putstr("Cette commande n'existe pas");
+	exit(1);
 }
 
 void	ft_child(int *end, char **envp, char **argv)
@@ -218,13 +220,16 @@ void	ft_child(int *end, char **envp, char **argv)
 	int f1;
 
 
-	f1 = open(argv[1], O_RDONLY);
+	if ((f1 = open(argv[1], O_RDONLY)) < 0)
+	{
+		ft_putstr("fichier1 manquant");
+		exit (1);
+	}
 	close(end[0]);
-	dup2(end[1], STDOUT_FILENO);
+	dup2(end[1], 1);
 	close(end[1]);
-	dup2(f1, STDIN_FILENO);
+	dup2(f1, 0);
 	ft_exec(argv, envp, 2);
-	exit(1);
 
 }
 
@@ -235,21 +240,23 @@ void	ft_parent(int *end, char **envp, char **argv, pid_t *child)
 
 	status = 0;
 	waitpid(*child, &status, WNOHANG);
-	f2 = open(argv[4], O_RDWR | O_CREAT | O_TRUNC, 0644);
+	if ((f2 = open(argv[4], O_RDWR | O_TRUNC, 0644)) < 0)
+	{
+		ft_putstr("fichier2 manquant");
+		exit(1);
+	}
 	close(end[1]);
-	dup2(end[0], STDIN_FILENO);
+	dup2(end[0], 0);
 	close(end[0]);
-	dup2(f2, STDOUT_FILENO);
-	ft_exec(argv, envp, 2);
-	exit(1);
+	dup2(f2, 1);
+	ft_exec(argv, envp, 3);
 }
 
 void	pipex(int *end, char **envp, char **argv)
 {
 	pid_t	child;
 
-	child = fork();
-	if (child < 0)
+	if ((child = fork()) < 0)
 		return (perror("Bad fork"));
 	else if (child == 0)
 		ft_child(end, envp, argv);
@@ -261,18 +268,17 @@ void	pipex(int *end, char **envp, char **argv)
 int main(int argc, char **argv, char **envp)
 {
 	int	end[2];
-/*	char **path;
-	int f1;
-	int f2;
-	
 
-
-	f1 = open(argv[1], O_RDONLY);
-	f2 = open(argv[4], O_CREAT | O_RDWR | O_TRUNC, 0644);
-	if (f1 < 0 || f2 < 0)
-		return (-1);
-	path = ft_split(ft_getPath(envp), ':');*/
-	pipe(end);
+	if (argc != 5)
+	{
+		ft_putstr("Entrez la commande sous la forme: \"./pipex fichier1 cmd1 cmd2 fichier2\""); 
+		exit(1);
+	}
+	if (pipe(end) == -1)
+	{
+		ft_putstr("Bad pipe");
+		exit(1);
+	}
 	pipex(end, envp, argv);
 	return (0);
 }
