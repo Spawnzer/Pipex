@@ -6,13 +6,17 @@
 /*   By: adubeau <marvin@42quebec.com>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/30 16:53:26 by adubeau           #+#    #+#             */
-/*   Updated: 2021/09/27 14:27:30 by adubeau          ###   ########.fr       */
+/*   Updated: 2021/10/01 22:11:52 by adubeau          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 
 size_t ft_strlen(const char *str)
 {
@@ -191,23 +195,84 @@ char **ft_getCmd(char **argv, int n)
 	return (ft_split(argv[n], ' '));
 }
 
-
-int main(int argc, char **argv, char **envp)
+void	ft_exec(char **argv, char **envp,  int n)
 {
 	char **command;
 	char **path;
 	char *cmd;
 	int i;
-	int n;
-	
-	path = ft_split(ft_getPath(envp), ':');
-	n = 1;
-	command = ft_getCmd(argv, n);
+
 	i = -1;
+	path = ft_split(ft_getPath(envp), ':');
+	command = ft_getCmd(argv, n);
 	while (path[++i])
 	{
 		cmd = ft_strjoin(ft_strjoin(path[i], "/"), command[0]);
 		execve(cmd, (char *const *) command, envp);
-		free(cmd);		
+		free(cmd);
 	}
+}
+
+void	ft_child(int *end, char **envp, char **argv)
+{
+	int f1;
+
+
+	f1 = open(argv[1], O_RDONLY);
+	close(end[0]);
+	dup2(end[1], STDOUT_FILENO);
+	close(end[1]);
+	dup2(f1, STDIN_FILENO);
+	ft_exec(argv, envp, 2);
+	exit(1);
+
+}
+
+void	ft_parent(int *end, char **envp, char **argv, pid_t *child)
+{
+	int status;
+	int f2;
+
+	status = 0;
+	waitpid(*child, &status, WNOHANG);
+	f2 = open(argv[4], O_RDWR | O_CREAT | O_TRUNC, 0644);
+	close(end[1]);
+	dup2(end[0], STDIN_FILENO);
+	close(end[0]);
+	dup2(f2, STDOUT_FILENO);
+	ft_exec(argv, envp, 2);
+	exit(1);
+}
+
+void	pipex(int *end, char **envp, char **argv)
+{
+	pid_t	child;
+
+	child = fork();
+	if (child < 0)
+		return (perror("Bad fork"));
+	else if (child == 0)
+		ft_child(end, envp, argv);
+	else if (child > 0)
+		ft_parent(end, envp, argv, &child);
+
+}
+
+int main(int argc, char **argv, char **envp)
+{
+	int	end[2];
+/*	char **path;
+	int f1;
+	int f2;
+	
+
+
+	f1 = open(argv[1], O_RDONLY);
+	f2 = open(argv[4], O_CREAT | O_RDWR | O_TRUNC, 0644);
+	if (f1 < 0 || f2 < 0)
+		return (-1);
+	path = ft_split(ft_getPath(envp), ':');*/
+	pipe(end);
+	pipex(end, envp, argv);
+	return (0);
 }
