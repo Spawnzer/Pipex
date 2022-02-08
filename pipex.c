@@ -16,7 +16,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include <sys/wait.h>
 
 size_t ft_strlen(const char *str)
 {
@@ -162,25 +162,26 @@ char	*ft_strjoin(char const *s1, char const *s2)
 	return (str);
 }
 
-void	ft_putchar(char c)
+void	ft_putchar(char c, int fd)
 {
-	write(1, &c, 1);
+	write(fd, &c, 1);
 }
 
-void	ft_putstr(char *str)
+void	ft_putstr_fd(char *str, int fd)
 {
 	int	i;
 
 	i = 0;
 	while (str[i])
-		ft_putchar(str[i++]);
-	write(1,"\n", 1);
+		ft_putchar(str[i++], fd);
+	write(fd,"\n", 1);
 }
 
 char	*ft_getPath(char **envp)
 {
 	int i;
-
+	
+	i = 0;
 	while (envp++)
 	{
 		if (envp[i][0] == 'P')
@@ -208,10 +209,14 @@ void	ft_exec(char **argv, char **envp,  int n)
 	while (path[++i])
 	{
 		cmd = ft_strjoin(ft_strjoin(path[i], "/"), command[0]);
-		execve(cmd, (char *const *) command, envp);
+		if (access(cmd, F_OK | X_OK) == 0)
+			break ;
 		free(cmd);
 	}
-	ft_putstr("Cette commande n'existe pas");
+	if (access(cmd, F_OK) == 0)
+		execve(cmd, (char *const *) command, envp);
+	else
+		ft_putstr_fd("Cette commande n'existe pas", 2);
 	exit(1);
 }
 
@@ -219,10 +224,9 @@ void	ft_child(int *end, char **envp, char **argv)
 {
 	int f1;
 
-
 	if ((f1 = open(argv[1], O_RDONLY)) < 0)
 	{
-		ft_putstr("fichier1 manquant");
+		ft_putstr_fd("fichier1 manquant", 2);
 		exit (1);
 	}
 	close(end[0]);
@@ -230,7 +234,6 @@ void	ft_child(int *end, char **envp, char **argv)
 	close(end[1]);
 	dup2(f1, 0);
 	ft_exec(argv, envp, 2);
-
 }
 
 void	ft_parent(int *end, char **envp, char **argv, pid_t *child)
@@ -239,10 +242,10 @@ void	ft_parent(int *end, char **envp, char **argv, pid_t *child)
 	int f2;
 
 	status = 0;
-	waitpid(*child, &status, WNOHANG);
-	if ((f2 = open(argv[4], O_RDWR | O_TRUNC, 0644)) < 0)
+	waitpid(*child, &status, 0);
+	if ((f2 = open(argv[4], O_RDWR | O_CREAT | O_TRUNC, 0644)) < 0)
 	{
-		ft_putstr("fichier2 manquant");
+		ft_putstr_fd("fichier2 manquant", 2);
 		exit(1);
 	}
 	close(end[1]);
@@ -262,7 +265,6 @@ void	pipex(int *end, char **envp, char **argv)
 		ft_child(end, envp, argv);
 	else if (child > 0)
 		ft_parent(end, envp, argv, &child);
-
 }
 
 int main(int argc, char **argv, char **envp)
@@ -271,12 +273,12 @@ int main(int argc, char **argv, char **envp)
 
 	if (argc != 5)
 	{
-		ft_putstr("Entrez la commande sous la forme: \"./pipex fichier1 cmd1 cmd2 fichier2\""); 
+		ft_putstr_fd("Entrez la commande sous la forme: \"./pipex fichier1 cmd1 cmd2 fichier2\"", 2); 
 		exit(1);
 	}
 	if (pipe(end) == -1)
 	{
-		ft_putstr("Bad pipe");
+		ft_putstr_fd("Bad pipe", 2);
 		exit(1);
 	}
 	pipex(end, envp, argv);
